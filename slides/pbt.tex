@@ -1,12 +1,13 @@
 \documentclass{beamer}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
 \usepackage{graphicx}
 \usepackage{hyperref}
 \usepackage[all]{xy}
+
 \newcommand{\comment}[1]{\textcolor{red}{#1}}
 \newcommand{\verify}[1]{\textcolor{blue}{\textbf{#1}}}
 \newcommand{\falsify}[1]{\textcolor{red}{\textbf{#1}}}
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
 % Or whatever. Note that the encoding and the font should match. If T1
 % does not look nice, try deleting the line with the fontenc.
 
@@ -27,9 +28,10 @@
 \author[Pedro Vasconcelos]{Pedro Vasconcelos \\ \texttt{pbvascon@fc.up.pt}}
 
 \institute[LIACC, DCC/FCUP]{
-  Laboratório de Inteligência Artificial e Ciência de Computadores\\
-  Departamento de Ciência de Computadores \\
-  Faculdade de Ciências, Universidade do Porto
+  DCC/FCUP \& LIACC \\
+  \includegraphics[width=0.4\textwidth]{images/fcup-identidade-logotipo-cores}
+  \qquad
+  \raisebox{4ex}{\includegraphics[width=0.3\textwidth]{images/liacc-logo.png}}
 }
 
 
@@ -74,19 +76,35 @@
   \titlepage
 \end{frame}
 
-\begin{frame}
+\begin{frame}[allowframebreaks]
   \frametitle{Overview}
   
   \begin{itemize}
   \item A long-standing challenge for software engineering 
     is ensuring software correctness
-  \item Formal proofs are (still) very rarely done
+  \item Formal proofs are (still) very expensive and rarely used
   \item \emph{Tests} are the most commonly used
-    techniques
-  \item \emph{Types} are the other one (for another talk!)
+    practical technique 
+  % \item \emph{Types} are another one (for another talk!)
   \item \emph{Unit tests} are the industry-standard
     for verification ``in the small''
-\end{itemize}
+  \end{itemize}
+
+  \framebreak
+  
+  This talk:
+  \begin{itemize}
+  \item \alert{Property-based testing} as a
+    automatic testing alternative to unit tests
+  \item Widely available in many programming languages
+  \item Many application examples in large industrial
+    systems
+  \item But still not commonly taught and under-utilized in practice
+  \item Could validation of AI~generated code be the ``killer app''
+    for PBT? 
+  \end{itemize}
+  
+  
 \end{frame}
 
 \begin{frame}[fragile]
@@ -124,20 +142,23 @@ def test_isqrt():
   \begin{itemize}
   \item a few unit tests per feature
   \item for $n$ features, $O(n)$ unit tests
-  \item but testing \emph{interaction} between features require $O(n^2),
+  \item but testing \emph{interactions} between features requires $O(n^2),
     O(n^3), \ldots$ unit tests
   \end{itemize}
   \pause
   \bigskip
   
-  Solution:
 
     \begin{minipage}{0.6\textwidth}
+      Solution:
+      \medskip
+      
       \begin{quote}
         ``Don't write tests \\
         --- generate them!''
       \end{quote}
-      John Hughes, co-author of QuickCheck
+      John Hughes, co-author of the \emph{QuickCheck}
+      PBT library
     \end{minipage}
     \begin{minipage}{0.3\textwidth}
       \hfill
@@ -180,58 +201,66 @@ def test_isqrt():
 \ldots many others: \url{https://en.wikipedia.org/wiki/QuickCheck}
 \end{frame}
 
+
 \begin{frame}[fragile]
   \frametitle{Example property}
 
-  Let us use Hypothesis to
-  specify a property for the integer square root function.
+  What can we say about the integer square root function?
   \pause
-  \bigskip
-  
-  Let $r = \texttt{isqrt}(n)$; then
+  \medskip
+
+  \begin{block}{Property}
+    Let $r = \texttt{isqrt}(n)$; then
   $r$ should be \emph{largest non-negative integer} such that
   $r^2 \leq n$.
+  \end{block}
   \pause
-  \bigskip
-  
+  \medskip
+
+  In Python:
 \begin{semiverbatim}
 from hypothesis import \ldots
 import hypothesis.strategies as st
-
-@given(st.integers(min_value=0))
-def test_isqrt(n):
+@given(\alert<5>{st.integers(min_value=0)})  \only<5->{\textsl{# non-negative integer}}
+def test_isqrt(\alert<4>{n}):                \only<4->{\textsl{# for all n}}
     r = isqrt(n)
-    assert r>=0 and r**2<=n and (r+1)**2>n
+    assert \alert<6>{r>=0 and r**2<=n and (r+1)**2>n}   \only<6->{\textsl{# assertion}}
   \end{semiverbatim}
 
-  \hfill (Cue demo.)
 \end{frame}
 
 \begin{frame}
   \frametitle{Properties in Hypothesis}
 
   \begin{itemize}
-  \item Properties are \emph{functions}
-  \item Should fail if the expected condition is not met
-  \item Arguments represent \emph{universally quantified}
-    variables
-  \item Possible values are described
-    by the \texttt{@given} decorator
-  \item Values are randomly generated using \emph{strategies}
+  \item Properties are \emph{functions}\ldots
+  \item \ldots that should fail if the expected condition is not met
+  \item Arguments are \emph{universally quantified}
+  \item For each property:
+    \begin{itemize}
+  \item generate a large number of tests (100 by default)
+  \item test data is randomly generated using \emph{strategies}
+  (defined in the decorator \texttt{@given})
+    \end{itemize}
   \item Module \texttt{hypothesis.strategies} provides:
     \begin{itemize}
     \item \emph{predefined strategies} for basic types
     \item methods for \emph{modifying} and \emph{combining} strategies
     \end{itemize}
   \end{itemize}
+\bigskip
+
+  \hfill (Cue demo.)
 \end{frame}
+
+
 
 \begin{frame}
   \frametitle{Strategies}
 
   \begin{description}
   \item[integers()] generate integers
-  \item[booleans()] generate True/False
+  \item[booleans()] generate logical values 
   \item[text()] generate Unicode strings
   \item[lists($s$)] lists of elements given by strategy $s$
     % \item[tuples($s1,s2,\ldots$)] lists of elements given by strategies $s1,s2,\ldots$
@@ -248,54 +277,136 @@ def test_isqrt(n):
   \end{itemize} 
 \end{frame}
 
+\begin{frame}[fragile]
+  \frametitle{Generating data}
+
+\begin{verbatim}
+>>> integers().example()
+848041
+
+>>> lists(integers(min_value=0, max_value=100)).example()
+[2, 29, 54, 66, 1, 27, 77, 81, 51, 18, 18]
+
+>>> lists(integers().map(lambda x:x*2)).example()
+[6668, -38, 1081651134, -6590]
+
+>>> lists(integers()).map(sorted).example()
+[-6913, -59, 37, 77, 90, 25088]
+
+>>> lists(booleans()).filter(lambda lst:lst!=[]).example()
+[False, False, True, False]
+\end{verbatim}
+  
+\end{frame}
+
+\begin{frame}
+  \frametitle{Another example}
+
+  Let's test the interaction between \emph{list reverse}
+  and \emph{append}.
+  
+  Consider $x, y$ two arbitrary lists:
+
+  \[  reverse(x + y) = \alt<1>{\hspace{2ex}???\hspace{18ex}}{reverse(y) + reverse(x)} \]
+  \pause
+
+  Example:
+  \[\begin{array}{ll}
+      reverse([1,2] + [3,4]) &= reverse([3,4]) + reverse([1,2]) \\
+                             &= [4,3] + [2,1]\\
+                             &= [4,3,2,1]
+  \end{array}\] 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Testing with lists of integers}
+
+\begin{verbatim}
+intlist = st.lists(st.integers())
+@given(intlist, intlist)
+def test_reverse_append(x, y):
+    assert reverse(x + y) == reverse(x) + reverse(y)
+\end{verbatim}
+\medskip
+\pause
+  
+\begin{semiverbatim}
+$ pytest basic.py -k test_reverse_append
+
+==================== FAILURES ==========================
+\alert{______________ test_reverse_append _____________________}
+
+x = [0], y = [1]
+\end{semiverbatim}
+What happened\ldots ?  
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Checking expectations}
+
+
+\begin{itemize}
+\item We've written the property incorrectly!
+\begin{semiverbatim}
+  assert reverse(x + y) == reverse(\alert{x}) + reverse(\alert{y})
+      \textsf{instead of}
+  assert reverse(x + y) == reverse(\alert{y}) + reverse(\alert{x})  
+\end{semiverbatim}
+\item Hypothesis found a counter-example:
+   \[ reverse([0]+[1]) \neq reverse([0]) + reverse([1]) \]
+\item Moreover: it is the \alert{smallest} counter-example
+  that falsifies the property
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile,allowframebreaks]
+  \frametitle{Shrinking}
+
+Assume Hypothesis randomly generates
+\begin{semiverbatim}
+x = [2,2]
+y = [1]
+\end{semiverbatim}
+This is a counter-example because:
+\begin{semiverbatim}
+      reverse([2,2]+[1]) \ensuremath{\neq}  reverse([2,2]) + reverse([1])
+\end{semiverbatim}
+
+To reduce ``noise'' from randomly generated data,
+Hypothesis attempts to \alert{shrink the
+counter example}:
+\begin{itemize}
+\item removing elements from the lists
+\item recursively shrinking the elements inside the lists
+\end{itemize}
+
+
+\pagebreak
+
+\[ \xymatrix@-0.5pc{
+  & & \counter{[2,2],[1]}\ar[dll]\ar[dl]\ar[d]\ar[dr]\ar[drr]\ar@{--}[drrr] \\
+  \counter{[2],[1]}\ar[d]\ar[dr]\ar[drr]\ar[drrr]\ar[drrrr] & 
+  \grayed{[2],[1]} & \grayed{[0,2],[1]} & \grayed{[1,2],[1]} & 
+  \grayed{[2,0],[1]} & \grayed{\cdots} \\
+  \discard{[\,],[1]} & \counter{[0],[1]}\ar[dl]\ar[d]\ar[dr] &
+  \grayed{[1],[1]} & \grayed{[2],[\,]} & \grayed{[2],[0]} \\
+  \discard{[\,],[1]} & \discard{[0],[\,]} & \discard{[0],[0]}
+} 
+\]
+\medskip
+
+\begin{itemize}
+\item Shrinking stops with  \texttt{x = [0]}, \texttt{y = [1]}
+  (the smaller lists are no longer counter-examples)
+\item For this property this is \emph{minimal} counter-example
+\item In general, shrinking only finds a \emph{local minimum}
+\end{itemize}
+\end{frame}
+
 \end{document}
 
 
 
-\begin{frame}[fragile]
-  \frametitle{Another example}
-
-\begin{block}{}
-\begin{semiverbatim}
-prop_revapp :: [\alt<2->{\alert{Int}}{a}] -> [\alt<2->{\alert{Int}}{a}] -> Bool
-prop_revapp xs ys = reverse (xs++ys) == 
-                    reverse ys ++ reverse xs
-\end{semiverbatim}
-\end{block}
-
-\begin{itemize}
-\item The property holds for lists of \alert{any} type\ldots\pause
-\item But we need some concrete type for testing (e.g.\@ \alert{Int})
-\begin{verbatim}
-> quickCheck prop_revapp
-+++ OK, passed 100 tests.
-\end{verbatim}
-\end{itemize}
-
-
-\end{frame}
-
-\begin{frame}[fragile]
-\frametitle{When a property fails}
-
-\begin{block}{}
-\begin{semiverbatim}
-prop_revapp' :: [Int] -> [Int] -> Bool
-prop_revapp' xs ys = reverse (xs++ys) == 
-                     reverse xs ++ reverse ys
-                     \alert{-{}- wrong !!!!}
-\end{semiverbatim}
-\end{block}  
-
-\begin{verbatim}
-> quickCheck prop_revapp'
-*** Failed! (after 5 tests and 3 shrinks):    
-[0]
-[1]
-\end{verbatim}
-The counter-example shown is minimal!
-
-\end{frame}
 
 \begin{frame}
   \frametitle{How QuickCheck works}
@@ -323,53 +434,6 @@ The counter-example shown is minimal!
 \end{frame}
 
 
-\begin{frame}[fragile,allowframebreaks]
-  \frametitle{Shrinking}
-
-\begin{block}{}
-\begin{semiverbatim}
-prop_revapp' :: [Int] -> [Int] -> Bool
-prop_revapp' xs ys = reverse (xs++ys) == 
-                     reverse xs ++ reverse ys
-                     \alert{-{}- wrong !!!!}
-\end{semiverbatim}
-\end{block}  
-\smallskip
-
-Assume we randomly generate
-\begin{semiverbatim}
-xs = [2,2]
-ys = [1]
-\end{semiverbatim}
-This is a \alert{counter-example} because:
-\begin{semiverbatim}
-      reverse ([2,2]++[1]) \ensuremath{\neq} 
-               reverse [2,2] ++ reverse [1]
-\end{semiverbatim}
-
-\pagebreak
-
-%\[ \text{reverse}~([2,2]\conc[1]) \neq \text{reverse}~[2,2] \conc 
-%\text{reverse}~[1] \]
-
-Shrinking our counter-example:
-\[ \xymatrix@-0.5pc{
-  & & \counter{[2,2],[1]}\ar[dll]\ar[dl]\ar[d]\ar[dr]\ar[drr]\ar@{--}[drrr] \\
-  \counter{[2],[1]}\ar[d]\ar[dr]\ar[drr]\ar[drrr]\ar[drrrr] & 
-  \grayed{[2],[1]} & \grayed{[0,2],[1]} & \grayed{[1,2],[1]} & 
-  \grayed{[2,0],[1]} & \grayed{\cdots} \\
-  \discard{[\,],[1]} & \counter{[0],[1]}\ar[dl]\ar[d]\ar[dr] &
-  \grayed{[1],[1]} & \grayed{[2],[\,]} & \grayed{[2],[0]} \\
-  \discard{[\,],[1]} & \discard{[0],[\,]} & \discard{[0],[0]}
-} 
-\]
-\medskip
-
-\begin{itemize}
-\item A local miminum is obtained after two steps
-\item The shrinking heuristic is \alert{deterministic}  (pure function)
-\end{itemize}
-\end{frame}
 
 
 

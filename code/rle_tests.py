@@ -1,5 +1,5 @@
 #
-# Test an AI generated run-length encoding using Hypothesis
+# Test AI-generated run-length encoding functions using Hypothesis
 # 
 
 from hypothesis import given, assume, event, settings, Verbosity
@@ -15,36 +15,16 @@ def test_decode_encode_1(s):
     assert rle_decode(rle_encode(s)) == s
 
 
-
-
-
-
-
-
-    
-
-
-
-
-
 #
 # Experiment 2: restrict generation to strings without digits
 #
-
+# a strategy for non-digits Unicode characters
 nodigits = st.characters(exclude_categories=('Nd','Nl','No'))
 
 @settings(max_examples=500)
 @given(st.text(alphabet=nodigits))
 def test_decode_encode_2(s):
     assert rle_decode(rle_encode(s)) == s
-
-
-
-
-
-
-
-
     
 #
 # Experiment 3: collect statistics
@@ -58,8 +38,9 @@ def test_decode_encode_2(s):
 
 
 #
-# compute the longest repeated group
-# NB: this duplicates part of the RLE algorithm!
+# Compute the maximum size of repeat groups
+# NB: this duplicates part of the RLE implementation;
+# refactoring the code could improve this
 #
 def longest_count(s):
     if s == '':
@@ -79,19 +60,16 @@ def longest_count(s):
     return max(count,maxcount)
 
 
-
-
-
-
 #
 # Experiment 3
+# Improve test case distribution
 #
-# generator for longer repeat sequences of identical characters
+# generator for sequences with longer repeated identical characters
+counter = st.integers(min_value=0, max_value=20)
 longrepeat = st.builds(lambda count,char: ''.join(count*[char]),
-                       st.integers(min_value=0, max_value=20),
-                       nodigits)
+                       counter, nodigits)
 
-# choose either generator with equal probability
+# combine the two strategies with equal probability
 combined = st.one_of(st.text(nodigits), longrepeat)
 
 @settings(max_examples=500)
