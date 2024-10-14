@@ -70,7 +70,7 @@
   \titlepage
 \end{frame}
 
-\begin{frame}[allowframebreaks]
+\begin{frame}
   \frametitle{Overview}
   
   \begin{itemize}
@@ -84,9 +84,10 @@
     for verification ``in the small''
   \end{itemize}
 
-  \framebreak
+\end{frame}
+
+\begin{frame}{This talk}
   
-  This talk:
   \begin{itemize}
   \item \emph{Property-based testing}: an
     automatic testing alternative to unit tests
@@ -95,8 +96,9 @@
   \item Many successful applications in open-source and industrial
     systems
   \item But still not commonly taught and under-utilized in practice
-  \end{itemize}
-  
+  \item Slides and demo code: \url{https://github.com/pbv/why-pbt-matters}  \end{itemize}
+
+
   
 \end{frame}
 
@@ -104,7 +106,7 @@
   \frametitle{Unit tests}
 \begin{itemize}
 \item Code fragments for testing functions, classes, libraries, etc.
-\item Express the expected behaviour for a specific combinations of inputs
+\item Express the expected outputs for specific combinations of inputs
 \item Example: testing an integer square root function in Python
 \begin{verbatim}
 def test_isqrt():
@@ -217,7 +219,7 @@ def test_isqrt():
 
   In Python:
 \begin{semiverbatim}
-from hypothesis import \ldots
+from hypothesis import given
 import hypothesis.strategies as st
 @given(\alert<5>{st.integers(min_value=0)})  \only<5->{\textsl{# non-negative integer}}
 def test_isqrt(\alert<4>{n}):                \only<4->{\textsl{# for all n}}
@@ -236,9 +238,9 @@ def test_isqrt(\alert<4>{n}):                \only<4->{\textsl{# for all n}}
   \item Arguments are \emph{universally quantified}
   \item For each property:
     \begin{itemize}
-  \item generate a large number of tests (100 by default)
-  \item test data is randomly generated using \emph{strategies}
-  (defined through \texttt{@given})
+  \item test with a large number of random tests (100 by default)
+  \item generated using \emph{strategies}
+  (defined by \texttt{@given})
     \end{itemize}
   \item Module \texttt{hypothesis.strategies} provides:
     \begin{itemize}
@@ -383,9 +385,80 @@ This is very useful to reduce ``noise'' from the randomly generated data.
 \end{frame}
 
 
+\begin{frame}[allowframebreaks]
+  \frametitle{Validating AI generated code}
+
+    \begin{center}
+\includegraphics[width=0.75\textwidth]{images/rle_chat.png}
+  \end{center}
+  
+  \begin{itemize}
+  \item Let us use Hypothesis to validate AI generated code
+  \item Problem: write a pair of encode/decode functions
+    for \alert{run-length encoding}   
+  \end{itemize}
+
+  \[ \xymatrix@-0.5pc {
+      \texttt{'AABBCAAAAA'}\ar@/^/[rr]^{encode} &
+      & \texttt{'A3B2C1A5'}\ar@/^/[ll]^{decode}
+    }
+  \]
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Testing ChatGPT solution}
+
+  \begin{block}{``Roundtrip'' property}
+\begin{verbatim}
+@given(st.text())
+def test_decode_encode_1(s):
+    assert rle_decode(rle_encode(s)) == s
+\end{verbatim}
+    \end{block}\pause
+
+
+\begin{semiverbatim}
+$ pytest rle_tests.py -k test_decode_encode_1
+=================== FAILURES ===========================
+\alert{_____________ test_decode_encode_1 _____________________}
+
+s = '01'
+\end{semiverbatim}
+
+The solution doesn't work for (some) strings with digits!
+  
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Characterizing failure}
+
+  We can check if the generated code
+  works when the string contains no digits:
+\begin{verbatim}
+nodigits = st.characters(exclude_categories=('Nd','Nl','No'))
+@given(st.text(alphabet=nodigits))
+def test_decode_encode_2(s):
+    assert rle_decode(rle_encode(s)) == s
+\end{verbatim}
+
+  \begin{itemize}
+  \item The property now passes the default 100 tests
+  \item We can now:
+    \begin{itemize}
+    \item try to fix the solution for digits 
+    \item perform statistics on test data
+    \item improve test data distribution
+    \end{itemize}
+  \item This greatly increases the trust in the generated code
+  \end{itemize}
+   
+\end{frame}
+
+
 \begin{frame}[fragile]
 \frametitle{A larger example}
-\framesubtitle{Based on code from Ericsson}
+\framesubtitle{Based on production code from Ericsson}
 
 SMS text packing:
 \begin{itemize}
@@ -399,13 +472,13 @@ unpack(seq: bytes) -> bytes
 \end{verbatim} 
 \end{itemize}
 
-\begin{block}{``Round-trip'' property}
-\begin{verbatim}
-@given(...)
-def test_round_trip(seq):
-    assert unpack(pack(seq)) == seq
-\end{verbatim}
-\end{block}
+\begin{itemize}
+  \item John Hughes's company (QuviQ) found a subtle bug 
+    affecting strings of length multiple of 8
+    ending in a \texttt{\bs NUL} character
+  \item The code had already been unit tested and
+    was in production
+  \end{itemize}
 \end{frame}
 
 \begin{frame}[allowframebreaks]
@@ -427,15 +500,15 @@ def test_round_trip(seq):
 \begin{frame}
   \frametitle{Challenges}
 \begin{itemize}
-\item Writting \emph{effective} properties and generators
+\item Writting \emph{effective} properties  
   \begin{itemize}
   \item teaching developers pre- and post-conditions, invariants, etc.
-  \item helping industry adopt a higher-skill technology 
   \item university CS/SE courses can play a significant rôle here
+  \item helping industry adopt a higher-skill technology 
   \end{itemize}
 \item PBT works best with well-structured software
 \item Design systems around properties and not the other way around
-\item Is validation of AI~generated code the ``killer app''
+\item Is validation of AI~generated code a ``killer app''
   for PBT? 
 \end{itemize}
 \end{frame}
@@ -444,12 +517,23 @@ def test_round_trip(seq):
   \frametitle{References}
 
   \begin{thebibliography}{9}
-  \bibitem{QuickCheck00} Koen Claessen \& John Hughes: \newblock
-    \emph{QuickCheck: A lightweight tool for random testing
-      of Haskell programs}, ICFP 2000.
-  \bibitem{telecoms} Thomas Arts, John Hughes \& Joakim Johansson: \newblock
-    \emph{Testing Telecoms Software with Quviq QuickCheck}, Erlang'06.
-\end{thebibliography}
+  \bibitem{quickheck} Koen Claessen and John Hughes.
+    \emph{QuickCheck: A lightweight tool for random testing of Haskell
+      programs}, ACM ICFP 2000
+  \bibitem{hypothesis} D. R. MacIver \emph{et al}.
+    \emph{Hypothesis: A new approach to property-based testing},
+    The Journal of Open Source Software, 2019.
+    See also \url{https://hypothesis.readthedocs.io/}
+  \bibitem{telecoms} T. Arts, J. Hughes and J. Johansson
+    \emph{Testing Telecoms Software with Quviq QuickCheck},
+    ACM Workshop on Erlang, 2006
+  \bibitem{autosar} T. Arts, J. Hughes, U. Norell and H. Svensson,
+    \emph{Testing AUTOSAR software with QuickCheck}, IEEE ICSTW 2015
+  \bibitem{practice} H. Goldstein, \emph{et al}. \emph{Property-Based
+      Testing in Practice}, IEEE/ACM ICSE 2024
+  \end{thebibliography}
+
+
 \end{frame}
 
 \begin{frame}
@@ -459,6 +543,27 @@ def test_round_trip(seq):
 \end{frame}
 
 
+\begin{frame}
+  \frametitle{Writing properties}
+
+  \begin{description}
+  \item[equivalence] $f(x) = f_{spec} (x)$
+  e.g.\@ $f(x)$ is an optimized implementation
+  and $f_{spec}(x)$ is a reference implementation.
+    
+  \item[idempotency] $f(f(x)) = f(x)$
+  \item[roundtrip]  $g(f(x)) = x$ 
+  \item[associativity] $f(x,f(y,z) = f(x,y),z)$
+  \item[commutativity] $f(x,y) = f(y,x)$
+  \item[right identity] $f(x,zero) = x$
+  \item[left identity] $f(zero,x)= x$
+  \end{description}
+  \bigskip
+
+  Hypothesis can write these kind of properties for you ---
+  see \texttt{hypothesis.ghostwriter}.
+  
+\end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Generating data}
@@ -476,8 +581,8 @@ def test_round_trip(seq):
 >>> lists(integers()).map(sorted).example()
 [-6913, -59, 37, 77, 90, 25088]
 
->>> lists(booleans()).filter(lambda lst:lst!=[]).example()
-[False, False, True, False]
+>>> lists(one_of(integers(), booleans())).example()
+[True, True, -1318, True, True, -46, -46, True, -46]
 \end{verbatim}
   
 \end{frame}
@@ -514,10 +619,10 @@ We can also use PBT to test programs that:
   \frametitle{Industrial use example}
 
 \begin{itemize}
-\item Ericsson Media proxy
+\item Ericsson Media proxy (Java and C++)
 \item Establish telephony connection throught a firewall
 \item Tested with Erlang QuickCheck (Quviq.com)
-\item Adding and removing paricipants in a call
+\item Adding and removing participants in a call
 \item Random counterexample with 160 commands
 \item Shrunk automatically to 7 commands
 \end{itemize}
