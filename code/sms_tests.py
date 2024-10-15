@@ -1,6 +1,7 @@
 #
 # Test SMS packing/unpacking functions using Hypothesis
-#
+# Pedro Vasconcelos, 2024
+
 from hypothesis import given, assume, event, settings, Verbosity
 import hypothesis.strategies as st
 

@@ -1,10 +1,16 @@
 #
 # Test AI-generated run-length encoding functions using Hypothesis
-# 
+# Pedro Vasconcelos 2024
 
 from hypothesis import given, assume, event, settings, Verbosity
 import hypothesis.strategies as st
+
 from rle_chat import rle_encode, rle_decode
+#from rle_chat2 import rle_encode, rle_decode
+#from rle_chat3 import rle_encode, rle_decode
+#from rle_chat4 import rle_encode, rle_decode
+#from rle_chat5 import rle_encode, rle_decode
+
 
 #
 # Experiment 1: round-trip property for arbitrary strings 
@@ -78,3 +84,10 @@ def test_decode_encode_3(s):
     event(f'longest = {longest_count(s)}')
     assert rle_decode(rle_encode(s)) == s
 
+
+# generate parenthesis more frequently
+nodigits2 = st.one_of(nodigits, st.sampled_from("()"))
+@settings(max_examples=500)
+@given(st.text(alphabet=nodigits2))
+def test_decode_encode_4(s):
+    assert rle_decode(rle_encode(s)) == s

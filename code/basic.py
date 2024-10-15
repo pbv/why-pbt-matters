@@ -1,6 +1,6 @@
 #
 # Basic properties based tests using Hypothesis
-# 
+# Pedro Vasconcelos, 2024
 
 from hypothesis import given, assume, event, settings, Phase
 import hypothesis.strategies as st

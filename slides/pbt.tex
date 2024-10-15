@@ -227,6 +227,8 @@ def test_isqrt(\alert<4>{n}):                \only<4->{\textsl{# for all n}}
     assert \alert<6>{r>=0 and r**2<=n and (r+1)**2>n}   \only<6->{\textsl{# assertion}}
   \end{semiverbatim}
 
+  \visible<7>{\hfill (Cue demo.)}
+  
 \end{frame}
 
 \begin{frame}
@@ -248,9 +250,6 @@ def test_isqrt(\alert<4>{n}):                \only<4->{\textsl{# for all n}}
     \item methods for \emph{modifying} and \emph{combining} strategies
     \end{itemize}
   \end{itemize}
-\bigskip
-
-  \hfill (Cue demo.)
 \end{frame}
 
 
@@ -259,6 +258,7 @@ def test_isqrt(\alert<4>{n}):                \only<4->{\textsl{# for all n}}
   \frametitle{Strategies}
 
   \begin{description}
+    \item[floats()] generate floating-point numbers
   \item[integers()] generate integers
   \item[booleans()] generate logical values 
   \item[text()] generate Unicode strings
@@ -270,9 +270,9 @@ def test_isqrt(\alert<4>{n}):                \only<4->{\textsl{# for all n}}
   
   We can also:
   \begin{itemize}
-  \item modify strategies using \emph{parameters} (e.g.\@ \texttt{min\_value})
+  \item customize strategies using \emph{parameters} (e.g.\@ \texttt{min\_value})
   \item modify strategies by \emph{mapping} and \emph{filtering}
-  \item combine them using some \emph{combinator functions}
+  \item combine stategies using \emph{combinators}
   % \item sample them using the \texttt{.example()} method    
   \end{itemize} 
 \end{frame}
@@ -399,7 +399,7 @@ This is very useful to reduce ``noise'' from the randomly generated data.
   \end{itemize}
 
   \[ \xymatrix@-0.5pc {
-      \texttt{'AABBCAAAAA'}\ar@/^/[rr]^{encode} &
+      \texttt{'AAABBCAAAAA'}\ar@/^/[rr]^{encode} &
       & \texttt{'A3B2C1A5'}\ar@/^/[ll]^{decode}
     }
   \]
@@ -409,7 +409,7 @@ This is very useful to reduce ``noise'' from the randomly generated data.
 \begin{frame}[fragile]
   \frametitle{Testing ChatGPT solution}
 
-  \begin{block}{``Roundtrip'' property}
+  \begin{block}{``Roundtrip'' property i.e.\@ decode is the inverse of encode}
 \begin{verbatim}
 @given(st.text())
 def test_decode_encode_1(s):
@@ -452,19 +452,18 @@ def test_decode_encode_2(s):
     \end{itemize}
   \item This greatly increases the trust in the generated code
   \end{itemize}
-   
 \end{frame}
 
 
 \begin{frame}[fragile]
-\frametitle{A larger example}
+\frametitle{A real-world example}
 \framesubtitle{Based on production code from Ericsson}
 
 SMS text packing:
 \begin{itemize}
 \item 7-bit characters;
 \item transmitted using 8-bit \emph{bytes};
-\item we can pack eight 7-bit caracteres into seven 8~bit bytes;
+\item we can pack 8 7-bit caracteres into 7 8-bit bytes;
 \item two functions:
 \begin{verbatim}
 pack(seq: bytes) -> bytes
@@ -517,7 +516,7 @@ unpack(seq: bytes) -> bytes
   \frametitle{References}
 
   \begin{thebibliography}{9}
-  \bibitem{quickheck} Koen Claessen and John Hughes.
+  \bibitem{quickheck} K. Claessen and J. Hughes.
     \emph{QuickCheck: A lightweight tool for random testing of Haskell
       programs}, ACM ICFP 2000
   \bibitem{hypothesis} D. R. MacIver \emph{et al}.
