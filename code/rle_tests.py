@@ -6,10 +6,10 @@ from hypothesis import given, assume, event, settings, Verbosity
 import hypothesis.strategies as st
 
 from rle_chat import rle_encode, rle_decode
-#from rle_chat2 import rle_encode, rle_decode
-#from rle_chat3 import rle_encode, rle_decode
-#from rle_chat4 import rle_encode, rle_decode
-#from rle_chat5 import rle_encode, rle_decode
+# from rle_chat2 import rle_encode, rle_decode
+# from rle_chat3 import rle_encode, rle_decode
+# from rle_chat4 import rle_encode, rle_decode
+# from rle_chat5 import rle_encode, rle_decode
 
 
 #
@@ -19,7 +19,6 @@ from rle_chat import rle_encode, rle_decode
 @given(st.text())
 def test_decode_encode_1(s):
     assert rle_decode(rle_encode(s)) == s
-
 
 #
 # Experiment 2: restrict generation to strings without digits
@@ -38,7 +37,7 @@ def test_decode_encode_2(s):
 
 @settings(max_examples=500)
 @given(st.text(alphabet=nodigits))
-def test_decode_encode_2(s):
+def test_decode_encode_3(s):
     event(f'longest = {longest_count(s)}')
     assert rle_decode(rle_encode(s)) == s
 
@@ -67,7 +66,7 @@ def longest_count(s):
 
 
 #
-# Experiment 3
+# Experiment 4
 # Improve test case distribution
 #
 # generator for sequences with longer repeated identical characters
@@ -80,7 +79,7 @@ combined = st.one_of(st.text(nodigits), longrepeat)
 
 @settings(max_examples=500)
 @given(combined)
-def test_decode_encode_3(s):
+def test_decode_encode_4(s):
     event(f'longest = {longest_count(s)}')
     assert rle_decode(rle_encode(s)) == s
 
@@ -89,5 +88,5 @@ def test_decode_encode_3(s):
 nodigits2 = st.one_of(nodigits, st.sampled_from("()"))
 @settings(max_examples=500)
 @given(st.text(alphabet=nodigits2))
-def test_decode_encode_4(s):
+def test_decode_encode_5(s):
     assert rle_decode(rle_encode(s)) == s
