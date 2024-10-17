@@ -36,7 +36,6 @@
 \newcommand{\counter}[1]{\textbf{#1}}
 \newcommand{\noncounter}[1]{{\mathtt{#1}}}
 
-\newcommand{\conc}{\ensuremath{\!+\!\!+}}
 
 % If you have a file called "university-logo-filename.xxx", where xxx
 % is a graphic format that can be processed by latex or pdflatex,
@@ -45,23 +44,6 @@
 % \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
 % \logo{\pgfuseimage{university-logo}}
 
-
-
-% Delete this, if you do not want the table of contents to pop up atr
-% the beginning of each subsection:
-%\AtBeginSubsection[]
-%{
-%  \begin{frame}<beamer>
-%    \frametitle{Overview}
-%    \tableofcontents[currentsection,currentsubsection]
-%  \end{frame}
-%}
-
-
-% If you wish to uncover everything in a step-wise fashion, uncomment
-% the following command: 
-
-%\beamerdefaultoverlayspecification{<+->}
 
 
 \begin{document}
@@ -143,18 +125,18 @@ def test_isqrt():
   \bigskip
   
 
-    \begin{minipage}{0.6\textwidth}
+    \begin{minipage}{0.7\textwidth}
       Solution:
       \medskip
       
       \begin{quote}
-        ``Don't write tests \\
+        ``Don't write tests 
         --- generate them!''
       \end{quote}
       John Hughes, co-author of the \emph{QuickCheck}
       PBT library
     \end{minipage}
-    \begin{minipage}{0.3\textwidth}
+    \begin{minipage}{0.25\textwidth}
       \hfill
       \includegraphics[width=0.8\textwidth]{images/john-hughes}
     \end{minipage}
@@ -310,7 +292,7 @@ def test_reverse_append(x, y):
 \pause
   
 \begin{semiverbatim}
-$ pytest basic.py -k test_reverse_append
+pytest basic.py -k test_reverse_append
 
 ==================== FAILURES ==========================
 \alert{______________ test_reverse_append _____________________}
@@ -384,6 +366,33 @@ This is very useful to reduce ``noise'' from the randomly generated data.
 \end{itemize}
 \end{frame}
 
+\begin{frame}[fragile,allowframebreaks]
+  \frametitle{A real-world example}
+  \begin{itemize}
+  \item Ericsson's Erlang code for a SMS text packing
+  \item 7-bit characters transmitted using 8-bit \emph{bytes}
+  \item GSM standard: pack 8 caracteres into 7 bytes
+\item Translated into two Python functions:
+\begin{verbatim}
+pack(seq: bytes) -> bytes
+unpack(seq: bytes) -> bytes
+\end{verbatim}
+\item Roundtrip property: unpack is the inverse of pack
+  \[ unpack(pack(seq)) = seq, ~\text{for all}~ seq \]
+\end{itemize}
+\bigskip
+\hfill (Cue demo)
+
+\framebreak
+
+  \begin{itemize}
+  \item John Hughes's company (QuviQ) found a subtle bug 
+    affecting strings of length multiple of 8
+    ending in a \texttt{\bs NUL} character
+  \item The code had already been unit tested and
+    was in production
+  \end{itemize}
+\end{frame}
 
 \begin{frame}[allowframebreaks]
   \frametitle{Validating AI generated code}
@@ -419,7 +428,7 @@ def test_decode_encode_1(s):
 
 
 \begin{semiverbatim}
-$ pytest rle_tests.py -k test_decode_encode_1
+pytest rle_tests.py -k test_decode_encode_1
 =================== FAILURES ===========================
 \alert{_____________ test_decode_encode_1 _____________________}
 
@@ -455,30 +464,6 @@ def test_decode_encode_2(s):
 \end{frame}
 
 
-\begin{frame}[fragile]
-\frametitle{A real-world example}
-\framesubtitle{Based on production code from Ericsson}
-
-SMS text packing:
-\begin{itemize}
-\item 7-bit characters;
-\item transmitted using 8-bit \emph{bytes};
-\item we can pack 8 7-bit caracteres into 7 8-bit bytes;
-\item two functions:
-\begin{verbatim}
-pack(seq: bytes) -> bytes
-unpack(seq: bytes) -> bytes
-\end{verbatim} 
-\end{itemize}
-
-\begin{itemize}
-  \item John Hughes's company (QuviQ) found a subtle bug 
-    affecting strings of length multiple of 8
-    ending in a \texttt{\bs NUL} character
-  \item The code had already been unit tested and
-    was in production
-  \end{itemize}
-\end{frame}
 
 \begin{frame}[allowframebreaks]
   \frametitle{Conclusion}
@@ -551,7 +536,7 @@ unpack(seq: bytes) -> bytes
   and $f_{spec}(x)$ is a reference implementation.
     
   \item[idempotency] $f(f(x)) = f(x)$
-  \item[roundtrip]  $g(f(x)) = x$ 
+  \item[inverse]  $g(f(x)) = x$ 
   \item[associativity] $f(x,f(y,z) = f(x,y),z)$
   \item[commutativity] $f(x,y) = f(y,x)$
   \item[right identity] $f(x,zero) = x$
