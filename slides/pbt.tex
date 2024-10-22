@@ -259,6 +259,26 @@ def test_isqrt(\alert<4>{n}):                \only<4->{\textsl{# for all n}}
   \end{itemize} 
 \end{frame}
 
+\begin{frame}[fragile]
+  \frametitle{Generating data}
+
+\begin{verbatim}
+>>> integers().example()
+848041
+
+>>> lists(integers(min_value=0, max_value=100)).example()
+[2, 29, 54, 66, 1, 27, 77, 81, 51, 18, 18]
+
+>>> lists(integers().map(lambda x:x*2)).example()
+[6668, -38, 1081651134, -6590]
+
+>>> lists(integers()).map(sorted).example()
+[-6913, -59, 37, 77, 90, 25088]
+
+>>> lists(one_of(integers(), booleans())).example()
+[True, True, -1318, True, True, -46, -46, True, -46]
+\end{verbatim}
+\end{frame}
 
 \begin{frame}
   \frametitle{Another example}
@@ -380,8 +400,6 @@ unpack(seq: bytes) -> bytes
 \item Roundtrip property: unpack is the inverse of pack
   \[ unpack(pack(seq)) = seq, ~\text{for all}~ seq \]
 \end{itemize}
-\bigskip
-\hfill (Cue demo)
 
 \framebreak
 
@@ -435,7 +453,7 @@ pytest rle_tests.py -k test_decode_encode_1
 s = '01'
 \end{semiverbatim}
 
-The solution doesn't work for (some) strings with digits!
+The solution doesn't work for strings with digits!
   
 \end{frame}
 
@@ -445,22 +463,116 @@ The solution doesn't work for (some) strings with digits!
   We can check if the generated code
   works when the string contains no digits:
 \begin{verbatim}
-nodigits = st.characters(exclude_categories=('Nd','Nl','No'))
-@given(st.text(alphabet=nodigits))
+no_digits = st.characters(exclude_categories='N')
+@given(st.text(alphabet=no_digits))
 def test_decode_encode_2(s):
     assert rle_decode(rle_encode(s)) == s
 \end{verbatim}
 
   \begin{itemize}
   \item The property now passes the default 100 tests
-  \item We can now:
-    \begin{itemize}
-    \item try to fix the solution for digits 
-    \item perform statistics on test data
-    \item improve test data distribution
-    \end{itemize}
-  \item This greatly increases the trust in the generated code
+  \item We could now try to fix the solution for digits
+  \item But first: perform some statistics on the testing data
+  %   \begin{itemize}
+  %   \item try to fix the solution for digits 
+  %   \item perform statistics on test data
+  %   \item improve test data distribution
+  %   \end{itemize}
+  % \item This greatly increases the trust in the generated code
   \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile,allowframebreaks]
+  \frametitle{Characterizing test data}
+
+\begin{verbatim}
+def longest_count(s: str) -> int:
+   "Compute the maximum length of repeated chars."
+   ...
+
+@given(st.text(alphabet=no_digits))
+def test_decode_encode_3(s):
+    event(f'longest = {longest_count(s)}')
+    assert rle_decode(rle_encode(s)) == s
+\end{verbatim}
+
+  \framebreak
+  
+\begin{semiverbatim}
+pytest rle_tests.py -k test_decode_encode_3 \\
+        -{}-hypothesis-show-statistics
+
+================== Hypothesis Statistics ===============
+      * 75.70%, longest = 1
+      * 22.69%, longest = 2
+      * 1.00%, longest = 0
+      * 0.60%, longest = 3
+\end{semiverbatim}
+
+\begin{itemize}
+\item 75\% of the test cases had no repeats
+\item 22\% had maximum of 2 repeats
+\item No test case had more than 3 repeats
+\item Why? Because \texttt{text()} 
+   chooses each character independently
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile,allowframebreaks]
+  \frametitle{Improving test data generation}
+
+We will the \alert{combinators}
+\texttt{builds} and \texttt{one\_of}
+to write a strategy that:
+  \begin{enumerate}
+\item generates a long sequence of a \emph{single repeated} character;
+\item \emph{or} generates text as before.
+\end{enumerate}
+\bigskip
+
+\begin{verbatim}
+many_no_digits
+  = st.builds(lambda count, char: count*char,
+              st.integers(min_value=0, max_value=20),
+              no_digits)
+
+combined = st.one_of(many_no_digits,
+                     st.text(alphabet=no_digits))
+\end{verbatim}
+
+\framebreak
+
+This gives much better test data distribution:
+
+\begin{center}
+\begin{minipage}{0.5\textwidth}
+{\small\begin{verbatim}
+      * 35.69%, longest = 1
+      * 12.90%, longest = 2
+      * 10.48%, longest = 3
+      * 5.44%, longest = 0
+      * 4.23%, longest = 20
+      * 4.23%, longest = 6
+      * 3.63%, longest = 4
+      * 3.23%, longest = 7
+      * 3.02%, longest = 8
+      * 2.82%, longest = 12
+\end{verbatim}}
+\end{minipage}\begin{minipage}{0.45\textwidth}
+{\small\begin{verbatim}
+      * 2.82%, longest = 14
+      * 2.82%, longest = 17
+      * 1.81%, longest = 9
+      * 1.61%, longest = 10
+      * 1.61%, longest = 13
+      * 1.41%, longest = 15
+      * 1.21%, longest = 19
+      * 0.60%, longest = 5
+      * 0.40%, longest = 18
+\end{verbatim}}
+\end{minipage}
+\end{center}
+
 \end{frame}
 
 
@@ -546,29 +658,7 @@ def test_decode_encode_2(s):
 
   Hypothesis can write these kind of properties for you ---
   see \texttt{hypothesis.ghostwriter}.
-  
-\end{frame}
 
-\begin{frame}[fragile]
-  \frametitle{Generating data}
-
-\begin{verbatim}
->>> integers().example()
-848041
-
->>> lists(integers(min_value=0, max_value=100)).example()
-[2, 29, 54, 66, 1, 27, 77, 81, 51, 18, 18]
-
->>> lists(integers().map(lambda x:x*2)).example()
-[6668, -38, 1081651134, -6590]
-
->>> lists(integers()).map(sorted).example()
-[-6913, -59, 37, 77, 90, 25088]
-
->>> lists(one_of(integers(), booleans())).example()
-[True, True, -1318, True, True, -46, -46, True, -46]
-\end{verbatim}
-  
 \end{frame}
 
 

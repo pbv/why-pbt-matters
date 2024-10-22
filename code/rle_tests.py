@@ -4,6 +4,7 @@
 
 from hypothesis import given, assume, event, settings, Verbosity
 import hypothesis.strategies as st
+import itertools 
 
 from rle_chat import rle_encode, rle_decode
 # from rle_chat2 import rle_encode, rle_decode
@@ -23,59 +24,43 @@ def test_decode_encode_1(s):
 #
 # Experiment 2: restrict generation to strings without digits
 #
-# a strategy for non-digits Unicode characters
-nodigits = st.characters(exclude_categories=('Nd','Nl','No'))
+# a strategy for Unicode characters excluding digits
+no_digits = st.characters(exclude_categories='N')
 
 @settings(max_examples=500)
-@given(st.text(alphabet=nodigits))
+@given(st.text(alphabet=no_digits))
 def test_decode_encode_2(s):
     assert rle_decode(rle_encode(s)) == s
-    
+
 #
 # Experiment 3: collect statistics
 #
-
 @settings(max_examples=500)
-@given(st.text(alphabet=nodigits))
+@given(st.text(alphabet=no_digits))
 def test_decode_encode_3(s):
     event(f'longest = {longest_count(s)}')
     assert rle_decode(rle_encode(s)) == s
 
+#
+# Compute the maximum length of repeated characters
+#
+def longest_count(s: str) -> int:
+    maxlen = 0
+    for _, g in itertools.groupby(s):
+        maxlen = max(maxlen, len(list(g)))
+    return maxlen
 
 #
-# Compute the maximum size of repeat groups
-# NB: this duplicates part of the RLE implementation;
-# refactoring the code could improve this
+# Experiment 4: improve test data generation
 #
-def longest_count(s):
-    if s == '':
-        return 0
-    count = 1
-    maxcount = 0
-    i = 1
-    prev = s[0]
-    while i < len(s):
-        if s[i] == prev:
-            count = count+1
-        else:
-            maxcount = max(count, maxcount)
-            count = 1
-            prev = s[i]    
-        i = i+1    
-    return max(count,maxcount)
 
-
-#
-# Experiment 4
-# Improve test case distribution
-#
-# generator for sequences with longer repeated identical characters
-counter = st.integers(min_value=0, max_value=20)
-longrepeat = st.builds(lambda count,char: ''.join(count*[char]),
-                       counter, nodigits)
+# generator for long sequences of repeated characters
+many_no_digits = st.builds(lambda count, char: count*char,
+                           st.integers(min_value=0, max_value=20),
+                           no_digits)
 
 # combine the two strategies with equal probability
-combined = st.one_of(st.text(nodigits), longrepeat)
+combined = st.one_of(many_no_digits, st.text(alphabet=no_digits))
 
 @settings(max_examples=500)
 @given(combined)
@@ -85,8 +70,8 @@ def test_decode_encode_4(s):
 
 
 # generate parenthesis more frequently
-nodigits2 = st.one_of(nodigits, st.sampled_from("()"))
+no_digits2 = st.one_of(no_digits, st.sampled_from("()"))
 @settings(max_examples=500)
-@given(st.text(alphabet=nodigits2))
+@given(st.text(alphabet=no_digits2))
 def test_decode_encode_5(s):
     assert rle_decode(rle_encode(s)) == s

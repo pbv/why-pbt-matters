@@ -61,7 +61,7 @@ def test_round_trip_3(seq):
 def bytes_of_len(size):
     return st.lists(int7, min_size=size, max_size=size).map(bytes)
 
-# Check if all sequence of length 8 fail:
+# Check if all sequences of length 8 fail:
 @settings(max_examples=500)
 @given(bytes_of_len(8))
 def test_fail_trip_1(seq):
