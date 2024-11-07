@@ -5,7 +5,11 @@
 \usepackage{color}
 \usepackage{hyperref}
 \usepackage[all]{xy}
+\usepackage{tikz}
+\usepackage{wasysym}
 
+\usetikzlibrary{shapes.callouts}
+  
 \setbeamertemplate{frametitle continuation}[from second]
 
 % \mode<presentation>
@@ -29,6 +33,7 @@
   \raisebox{4ex}{\includegraphics[width=0.3\textwidth]{images/liacc-logo.png}}
 }
 
+\date{18th November 2024}
 
 \newcommand{\bs}{\symbol{92}}
 
@@ -52,6 +57,7 @@
   \titlepage
 \end{frame}
 
+
 \begin{frame}
   \frametitle{Overview}
   
@@ -61,11 +67,9 @@
   \item Formal proofs are (still) expensive and rarely used
   \item \emph{Tests} are the most commonly used
     practical technique 
-  % \item \emph{Types} are another one (for another talk!)
   \item \emph{Unit tests} are the industry-standard
     for verification ``in the small''
   \end{itemize}
-
 \end{frame}
 
 \begin{frame}{This talk}
@@ -75,14 +79,39 @@
     automatic testing alternative to unit tests
   \item A ``lightweight'' formal method
   \item Available for many programming languages
-  \item Many successful applications in open-source and industrial
-    systems
+  \item Many successful applications in open-source and some industrial
+    projects
   \item But still not commonly taught and under-utilized in practice
-  \item Slides and demo code: \url{https://github.com/pbv/why-pbt-matters}  \end{itemize}
-
-
-  
+  \end{itemize}
+\bigskip
+   Slides and demo code: \url{https://github.com/pbv/why-pbt-matters}
 \end{frame}
+
+\begin{frame}{Lightweight formal methods?}
+
+  \begin{block}{Formal method\tikz[remember picture]\node(a){\vphantom{X}};}
+    A mathematically rigorous technique for validating the actual behaviour of a program against
+    a description of desired behavious
+\end{block}
+  \bigskip\bigskip  \bigskip\bigskip
+
+  \begin{block}{Lightweight formal method\tikz[remember picture] \node (b) {\vphantom{X}};}
+    One that can be applied successfully by someone who doesn't
+    fully understand it \smiley
+  \end{block}
+  
+  \begin{tikzpicture}[remember picture,overlay]
+    \path<2> (a.east) ++(0,1) node[anchor=west,ellipse callout,fill=red!50,opacity=.5, callout absolute pointer={(a.mid)}]  {supports automation};
+    \path<2> (b.east) ++(0,1) node[anchor=west,ellipse callout,fill=red!50,opacity=.5, callout absolute pointer={(b.mid)}]  {requires automation};   
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{PBT vs unit tests vs formal verification}
+  \includegraphics[width=\textwidth]{images/pbt-vs-formal} 
+\end{frame}
+
+
 
 \begin{frame}[fragile]
   \frametitle{Unit tests}
@@ -99,8 +128,6 @@ def test_isqrt():
    assert isqrt(9) == 3
 \end{verbatim}
 \end{itemize}
-
-
 \end{frame}
 
 
@@ -139,9 +166,9 @@ def test_isqrt():
     \begin{minipage}{0.25\textwidth}
       \hfill
       \includegraphics[width=0.8\textwidth]{images/john-hughes}
-    \end{minipage}
-  
+    \end{minipage}  
 \end{frame}
+
 
 \begin{frame}[allowframebreaks]
   \frametitle{Property-based testing}
@@ -165,11 +192,11 @@ def test_isqrt():
 
 \begin{itemize}
 \item QuickCheck (2000): first PBT library (for Haskell)
-\item Implementations for other languages
+\item Other implementations:
   \begin{description}
   \item[PropEr] for Erlang
   \item[ScalaCheck] for Scala
-%  \item[QuickCheck-Core] for OCaml
+  % \item[Hedgehog, Falsify] for Haskell
   \item[Hypothesis] for Python
   \item[FsCheck] for F\#
   \item[JUnit-QuickCheck] for Java
@@ -178,9 +205,8 @@ def test_isqrt():
 \end{itemize}
 \bigskip
 
-\ldots many others: \url{https://en.wikipedia.org/wiki/QuickCheck}
+Many others: \url{https://en.wikipedia.org/wiki/QuickCheck}
 \end{frame}
-
 
 \begin{frame}[fragile]
   \frametitle{Example property}
@@ -189,13 +215,11 @@ def test_isqrt():
   \pause
   \medskip
 
-  \begin{block}{Property}
-    Let $n$ be an arbitrary non-negative number;
-    let $r = \texttt{isqrt}(n)$; then
-    \[ r\geq0 \land r^2 \leq n \land (r+1)^2>n  \]
-    i.e.\@ $r$ should be \emph{largest non-negative integer} such that
+  Let $n$ be an arbitrary non-negative number;
+  let $r = \texttt{isqrt}(n)$; then
+  \[ r\geq0 \land r^2 \leq n \land (r+1)^2>n  \]
+  i.e.\@ $r$ should be \emph{largest non-negative integer} such that
   $r^2 \leq n$.
-  \end{block}
   \pause
   \medskip
 
@@ -259,6 +283,7 @@ def test_isqrt(\alert<4>{n}):                \only<4->{\textsl{# for all n}}
   \end{itemize} 
 \end{frame}
 
+
 \begin{frame}[fragile]
   \frametitle{Generating data}
 
@@ -279,6 +304,7 @@ def test_isqrt(\alert<4>{n}):                \only<4->{\textsl{# for all n}}
 [True, True, -1318, True, True, -46, -46, True, -46]
 \end{verbatim}
 \end{frame}
+
 
 \begin{frame}
   \frametitle{Another example}
@@ -338,61 +364,37 @@ What happened\ldots ?
 \item This is the \emph{smallest} counter-example
   that falsifies the property
 \item Hypothesis \emph{always} find this counter-example
-  (regardless of random generation)!
+  regardless of random generation!
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile,allowframebreaks]
-  \frametitle{Shrinking}
-
-Assume Hypothesis randomly generates
-\begin{semiverbatim}
-x = [2,2]
-y = [1]
-\end{semiverbatim}
-This is a counter-example because:
-\begin{semiverbatim}
-      reverse([2,2]+[1]) \ensuremath{\neq}  reverse([2,2]) + reverse([1])
-\end{semiverbatim}
-\medskip
-
-Hypothesis attempts to simplify
-the counter-example (``shrinking'')
-before presenting:
-\begin{itemize}
-\item removing elements from the lists
-\item recursively shrinking the elements inside the lists
-\end{itemize}
-This is very useful to reduce ``noise'' from the randomly generated data.
-\end{frame}
 
 \begin{frame}
-\frametitle{Shrinking in action}
+  \frametitle{Shrinking}
 
-\[ \xymatrix@-0.5pc{
- & \counter{[2,2],[1]}\ar[dl]\ar[d] \\
- \noncounter{[],[1]} &  \counter{[2],[1]}\ar[dl]\ar[dr] \\
- \noncounter{[],[1]} & &\alert<2->{\counter{[0],[1]}}\ar[dl]\ar[d]\ar[dr]
- &  \visible<2->{\alert{\text{minimal}}} \\
-&  \noncounter{[],[1]} & \noncounter{[0],[]} & \noncounter{[0],[0]}
-} 
-\]
-
-\begin{itemize}
-\item Shrinking ends with  \texttt{x = [0]}, \texttt{y = [1]}
-  (smaller lists are no longer counter-examples)
-\item For this property this is \emph{minimal} counter-example
+  \begin{itemize}
+  \item Hypothesis attempts to simplify counter-examples
+  before presenting; e.g.:
+  \begin{itemize}
+  \item removing elements from the lists
+  \item shrinking elements inside the lists
+  \end{itemize}
+\item This is useful to remove ``noise'' from
+  randomly generated data
+\item For the previous example we obtain
+  the \emph{minimal} counter-example  
 \item In general, shrinking only finds a \emph{local minimum}
 \end{itemize}
 \end{frame}
 
+
 \begin{frame}[fragile,allowframebreaks]
   \frametitle{A real-world example}
   \begin{itemize}
-  \item Ericsson's Erlang code for a SMS text packing
+  \item Erlang code for SMS text packing at Ericsson
   \item 7-bit characters transmitted using 8-bit \emph{bytes}
   \item GSM standard: pack 8 caracteres into 7 bytes
-\item Translated into two Python functions:
+\item Two functions (translated to Python):
 \begin{verbatim}
 pack(seq: bytes) -> bytes
 unpack(seq: bytes) -> bytes
@@ -407,10 +409,10 @@ unpack(seq: bytes) -> bytes
   \item John Hughes's company (QuviQ) found a subtle bug 
     affecting strings of length multiple of 8
     ending in a \texttt{\bs NUL} character
-  \item The code had already been unit tested and
-    was in production
+  \item The code had been unit tested and  was in production
   \end{itemize}
 \end{frame}
+
 
 \begin{frame}[allowframebreaks]
   \frametitle{Validating AI generated code}
@@ -521,9 +523,7 @@ pytest rle_tests.py -k test_decode_encode_3 \\
 \begin{frame}[fragile,allowframebreaks]
   \frametitle{Improving test data generation}
 
-We will the \alert{combinators}
-\texttt{builds} and \texttt{one\_of}
-to write a strategy that:
+  We will use \alert{combinators} to write a strategy that:
   \begin{enumerate}
 \item generates a long sequence of a \emph{single repeated} character;
 \item \emph{or} generates text as before.
@@ -575,8 +575,6 @@ This gives much better test data distribution:
 
 \end{frame}
 
-
-
 \begin{frame}[allowframebreaks]
   \frametitle{Conclusion}
 
@@ -585,27 +583,29 @@ This gives much better test data distribution:
 \item Lightweight: implemented as libraries
 \item Flexible: domain-specific languages (DSLs) for writing
     data generators and properties
- \item Scales to realistic software
-    
+ \item Scales to realistic software   
 \item Couples executable specifications with code
 \item Useful for comunicating expectations among developers
 \item Useful for finding subtle bugs in complex systems 
 \end{itemize}
 \end{frame}
 
+
+
 \begin{frame}
   \frametitle{Challenges}
 \begin{itemize}
 \item Writting \emph{effective} properties  
   \begin{itemize}
-  \item teaching developers pre- and post-conditions, invariants, etc.
-  \item university CS/SE courses can play a significant rôle here
+  \item training software engineers to think about
+    pre- and post-conditions, invariants, etc.
+  \item universities can play a significant role here
   \item helping industry adopt a higher-skill technology 
   \end{itemize}
-\item PBT works best with well-structured software
+\item PBT works best with software that is well structured
 \item Design systems around properties and not the other way around
-\item Is validation of AI~generated code a ``killer app''
-  for PBT? 
+% \item Is validation of AI~generated code a ``killer app''
+%  for PBT? 
 \end{itemize}
 \end{frame}
 
@@ -705,13 +705,6 @@ We can also use PBT to test programs that:
 \includegraphics[width=\textwidth]{images/media1}
 \end{center}
 \end{frame}
-
-
-
-
-
-
-
 
 \end{document}
 
