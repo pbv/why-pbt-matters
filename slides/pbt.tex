@@ -64,7 +64,7 @@
   \begin{itemize}
   \item A long-standing challenge for software engineering 
     is ensuring software correctness
-  \item Formal proofs are (still) expensive and rarely used
+  \item Formal verificarion is (still) expensive and rarely used
   \item \emph{Tests} are the most commonly used
     practical technique 
   \item \emph{Unit tests} are the industry-standard
@@ -87,23 +87,24 @@
    Slides and demo code: \url{https://github.com/pbv/why-pbt-matters}
 \end{frame}
 
-\begin{frame}{Lightweight formal methods?}
+\begin{frame}{``Lightweight'' formal method?}
 
+  \bigskip\bigskip
   \begin{block}{Formal method\tikz[remember picture]\node(a){\vphantom{X}};}
-    A mathematically rigorous technique for validating the actual behaviour of a program against
-    a description of desired behavious
+    A mathematically rigorous technique for validating the actual
+    behaviour of a program against a description of desired behavious
 \end{block}
-  \bigskip\bigskip  \bigskip\bigskip
+  \bigskip\bigskip
 
-  \begin{block}{Lightweight formal method\tikz[remember picture] \node (b) {\vphantom{X}};}
-    One that can be applied successfully by someone who doesn't
-    fully understand it \smiley
+  \begin{block}{Lightweight formal method\tikz[remember picture]\node(b){\vphantom{X}};}
+    One that can be applied successfully by someone who doesn't fully
+    understand it \smiley
   \end{block}
   
   \begin{tikzpicture}[remember picture,overlay]
-    \path<2> (a.east) ++(0,1) node[anchor=west,ellipse callout,fill=red!50,opacity=.5, callout absolute pointer={(a.mid)}]  {supports automation};
-    \path<2> (b.east) ++(0,1) node[anchor=west,ellipse callout,fill=red!50,opacity=.5, callout absolute pointer={(b.mid)}]  {requires automation};   
-\end{tikzpicture}
+    \path<2> (a.east) ++(0,1) node[anchor=west,ellipse callout,fill=red!50,opacity=.5, callout absolute pointer={(a.mid)}]{supports automation};
+    \path<2> (b.east) ++(0,1) node[anchor=west,ellipse callout,fill=red!50,opacity=.5, callout absolute pointer={(b.mid)}]{requires automation};   
+  \end{tikzpicture}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -246,7 +247,7 @@ def test_isqrt(\alert<4>{n}):                \only<4->{\textsl{# for all n}}
   \item Arguments are \emph{universally quantified}
   \item For each property:
     \begin{itemize}
-  \item test with a large number of random tests (100 by default)
+  \item test with a large number of random values (100 by default)
   \item generated using \emph{strategies}
   (defined by \texttt{@given})
     \end{itemize}
