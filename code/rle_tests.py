@@ -17,6 +17,7 @@ from rle_chat import rle_encode, rle_decode
 # Experiment 1: round-trip property for arbitrary strings 
 #
 
+@settings(max_examples=500)
 @given(st.text())
 def test_decode_encode_1(s):
     assert rle_decode(rle_encode(s)) == s
