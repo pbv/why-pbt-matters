@@ -1,7 +1,7 @@
 #
-# Basic properties based tests using Hypothesis
+# Basic property tests using Hypothesis
 # Pedro Vasconcelos, 2024
-
+#
 from hypothesis import given, assume, event, settings, Phase
 import hypothesis.strategies as st
 import math
@@ -12,12 +12,37 @@ import math
 def isqrt(n):
     return int(math.sqrt(n))
 
-# A property for testing integer square roots
+#
+# Property for testing the integer square root
+#
 @given(st.integers(min_value=0))
 def test_isqrt(n):
     r = isqrt(n)
     assert r>=0 and r**2<=n and (r+1)**2>n
 
+#
+# Alternative version of the integer square root
+# Using an integer arithmetic version of Newton's method
+# (see https://en.wikipedia.org/wiki/Integer_square_root)
+#
+def better_isqrt(n):
+    if n <= 1:
+        return n
+    # initial approximation (must be too high)
+    x0 = n//2
+    x1 = (x0 + n//x0)//2
+    while x1 < x0:
+        x0 = x1
+        x1 = (x0 + n//x0)//2
+    return x0
+
+
+@given(st.integers(min_value=0))
+def test_better_isqrt(n):
+    r = better_isqrt(n)
+    assert r>=0 and r**2<=n and (r+1)**2>n
+
+    
 # 2) Generating data
 #
 # a strategy for generating odd integers
