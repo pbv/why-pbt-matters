@@ -313,87 +313,57 @@ def test_isqrt(\alert<4>{n}):                \only<4->{\textsl{# for all n}}
 \end{verbatim}
 \end{frame}
 
-
 \begin{frame}
-  \frametitle{Another example}
+  \frametitle{Shrinking}
 
-  Let's test the interaction between \emph{list reverse}
-  and \emph{append}.
-  
-  Consider $x, y$ two arbitrary lists:
-
-  \[  reverse(x + y) = \alt<1>{\hspace{2ex}???\hspace{18ex}}{reverse(y) + reverse(x)} \]
-  \pause
-
-  Example:
-  \[\begin{array}{ll}
-      reverse([1,2] + [3,4]) &= reverse([3,4]) + reverse([1,2]) \\
-                             &= [4,3] + [2,1]\\
-                             &= [4,3,2,1]
-  \end{array}\] 
+  \begin{itemize}
+  \item Hypothesis attempts to \alert{simplify counter-examples}
+    before presenting; e.g.:
+  \begin{itemize}
+  \item removing elements from any lists
+  \item shrinking elements inside any lists
+  \end{itemize}
+\item This is useful to remove ``noise'' from
+  randomly generated data
+\item Hypothesis keeps shrinking recursively while example still fails
+  the property
+\end{itemize}
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Testing with lists of integers}
+  \frametitle{An example}
 
+  A wrong property on lists: 
 \begin{verbatim}
-intlist = st.lists(st.integers())
-@given(intlist, intlist)
-def test_reverse_append(x, y):
-    assert reverse(x + y) == reverse(x) + reverse(y)
+@given(st.lists(st.integers())
+def test_reverse_wrong(x):
+    assert list(reversed(x)) == x
 \end{verbatim}
 \medskip
 \pause
   
 \begin{semiverbatim}
-pytest basic.py -k test_reverse_append
+pytest basic.py -k test_reverse_wrong
 
-==================== FAILURES ==========================
-\alert{______________ test_reverse_append _____________________}
-
-x = [0], y = [1]
+\alert{E       Falsifying example: test_reverse_wrong(}
+\alert{E           x=[0, 1],}
+\alert{E       )}
 \end{semiverbatim}
-What happened\ldots ?  
-\end{frame}
 
-\begin{frame}[fragile]
-  \frametitle{Checking expectations}
-
+\pause
 
 \begin{itemize}
-\item We've written the property incorrectly!
-\begin{semiverbatim}
-  assert reverse(x + y) == reverse(\alert{x}) + reverse(\alert{y})
-      \textsf{instead of}
-  assert reverse(x + y) == reverse(y) + reverse(x)  
-\end{semiverbatim}
-\item Hypothesis found a counter-example for the wrong property:
-   \[ reverse([0]+[1]) \neq reverse([0]) + reverse([1]) \]
-\item This is the \emph{smallest} counter-example
-  that falsifies the property
-\item Hypothesis \emph{always} find this counter-example
-  regardless of random generation!
+\item The counter-example reported is \alert{minimal}
+\item \texttt{[]}, \texttt{[0]}, \texttt{[1]} and
+  \texttt{[0,0]}
+  are \emph{not} counter-examples
+  
 \end{itemize}
+
 \end{frame}
 
 
-\begin{frame}
-  \frametitle{Shrinking}
 
-  \begin{itemize}
-  \item Hypothesis attempts to simplify counter-examples
-  before presenting; e.g.:
-  \begin{itemize}
-  \item removing elements from the lists
-  \item shrinking elements inside the lists
-  \end{itemize}
-\item This is useful to remove ``noise'' from
-  randomly generated data
-\item For the previous example we obtain
-  the \emph{minimal} counter-example  
-\item In general, shrinking only finds a \emph{local minimum}
-\end{itemize}
-\end{frame}
 
 
 \begin{frame}[fragile,allowframebreaks]
