@@ -1,16 +1,22 @@
 \documentclass{beamer}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage{helvet}
 \usepackage{graphicx}
 \usepackage{color}
 \usepackage{hyperref}
 \usepackage[all]{xy}
 \usepackage{tikz}
 \usepackage{wasysym}
+\usepackage{pifont}
 
 \usetikzlibrary{shapes.callouts}
   
 \setbeamertemplate{frametitle continuation}[from second]
+
+
+\newcommand{\checkmak}{\text{\ding{52}}}
+\newcommand{\crossmak}{\text{\ding{54}}}
 
 % \mode<presentation>
 % {
@@ -33,7 +39,7 @@
   \raisebox{4ex}{\includegraphics[width=0.3\textwidth]{images/liacc-logo.png}}
 }
 
-\date{6th December 2024}
+\date{October 2025}
 
 \newcommand{\bs}{\symbol{92}}
 
@@ -177,12 +183,13 @@ def test_isqrt():
 
 \begin{itemize}
 \item Write \emph{properties} instead of specific tests
-\begin{itemize}
-\item should be universal, i.e.\@ hold for all values
-\item should define the expected behaviour for \emph{all} cases
+  \begin{itemize}
+  \item functions that take some arguments and assert something
+  \item should be universal, i.e.\@ hold for \emph{all} values
+  \item should define the expected behaviour for \emph{all} cases
 \end{itemize}
 \item Specify \emph{generators} for the inputs
-\item The testings framework runs the property with
+\item The testing framework executes the property with
   a large number of inputs
   \begin{itemize}
   \item testing fails if a \alert{counter-example} is found
@@ -193,12 +200,11 @@ def test_isqrt():
 \framebreak
 
 \begin{itemize}
-\item QuickCheck (2000): first PBT library (for Haskell)
+\item Haskell QuickCheck (2000): first PBT library 
 \item Other implementations:
   \begin{description}
   \item[PropEr] for Erlang
   \item[ScalaCheck] for Scala
-  % \item[Hedgehog, Falsify] for Haskell
   \item[Hypothesis] for Python
   \item[FsCheck] for F\#
   \item[JUnit-QuickCheck] for Java
@@ -415,6 +421,212 @@ unpack(seq: bytes) -> bytes
   \end{itemize}
 \end{frame}
 
+\begin{frame}
+  \frametitle{Stateful programs}
+
+We can also use PBT to test programs that:
+\begin{enumerate}
+\item modify state;
+\item read and write files;
+\item use network services, databases, etc.
+\end{enumerate}
+\end{frame}
+
+
+
+\begin{frame}[allowframebreaks]
+  \frametitle{State machine testing}
+
+  \begin{itemize}
+  \item Start from a well-defined initial state
+  \item Generate random sequences of commands
+  \item Executed  both in the \alert{implementation} and 
+    some \alert{model}
+  \item Compare the results of implementation against the model
+    after each step
+\end{itemize}
+
+\[\xymatrix{
+    \text{implementation} &
+    s_0 \ar[r]^{r_1} & s_1\ar[r]^{r_2}\ar@{--}[d]^{?} & s_2\ar[r]^{r_3}\ar@{--}[d]^{?} & s_3\ar[r]^{r_4}\ar@{--}[d]^{?} & \cdots \\
+    \text{model} & 
+    m_0\ar[r]^{r_1} & m_1\ar[r]^{r_2} & m_2\ar[r]^{r_3} & m_3\ar[r]^{r_4} & \cdots
+  }
+\]
+
+\framebreak
+
+\begin{itemize}
+\item Tests fail if there is a mismatch between model and implementation
+\item The counter example is the \alert{command sequence} leading to the failure
+\item Shriking is applied to find a minimal command sequence 
+\end{itemize}
+ 
+\[ \xymatrix{
+    \text{implementation} &
+    s_0 \ar[r]^{r_1} & s_1\ar[r]^{r_2}\ar@{--}[d]^{\checkmak} & s_2\ar[r]^{r_3}\ar@{--}[d]^{\checkmak} & s_3\ar@{--}[d]^{\crossmak} &  \\
+    \text{model} & 
+    m_0\ar[r]^{r_1} & m_1\ar[r]^{r_2} & m_2\ar[r]^{r_3} & m_3 & 
+  }
+\]
+
+\begin{center}
+  Sequence $[r1,r2,r3]$ leads to a test failure.
+  \end{center}
+
+%\begin{center}
+%\includegraphics[width=0.75\textwidth]{images/imperative.png}
+%\end{center}
+\end{frame}
+
+
+
+
+\begin{frame}
+  \frametitle{State machine testing example}
+
+  \begin{itemize}
+  \item A database for associating \emph{users} and \emph{emails}
+  \item Implemented as stateful class and SQLite 
+  \item Users are represented by an integer ids
+  \item Each user can have more than one email
+  \item Operations:
+    \begin{description}
+    \item[add(userid,email)]  add an email to a user
+    \item[get(userid)] get all emails from a user
+    \item[remove(userid,email)] remove and email from a user
+    \item[delete(userid)] remove all emails from a user
+    \end{description}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Testing the database}
+
+  \begin{itemize}
+  \item The model is a list of pairs (user,email)
+  \item The state machine initializes starts with and empty DB
+    and empty model
+  \item Each transition is defined as a method labeled as \alert{rule}
+    \begin{itemize}
+    \item corresponds to one of the UserDB operations
+    \item performs the operation in both implementation and model
+    \item checks that the implementation and model match (if applicable)
+    \end{itemize}
+  \item Hypothesis will generate random sequences of rules
+  \item A counter-example will be a \alert{sequence of rules}
+    leading to a mismatch
+  \end{itemize}
+
+  (Cue demo.)
+\end{frame}
+
+\begin{frame}
+  \frametitle{Industrial use example}
+
+\begin{itemize}
+\item Ericsson Media proxy (Java and C++)
+\item Establish telephony connection throught a firewall
+\item Tested with Erlang QuickCheck (Quviq.com)
+\item Adding and removing participants in a call
+\item Random counterexample with 160 commands
+\item Shrunk automatically to 7 commands
+\end{itemize}
+
+\begin{center}
+\includegraphics[width=\textwidth]{images/media1}
+\end{center}
+\end{frame}
+
+
+\begin{frame}[allowframebreaks]
+  \frametitle{Conclusion}
+
+\begin{itemize}
+\item PBT philosophy: write \emph{properties} and \emph{generate} tests
+\item Lightweight: implemented as libraries
+\item Flexible: domain-specific languages (DSLs) for writing
+    data generators and properties
+ \item Scales to realistic software   
+\item Couples executable specifications with code
+\item Useful for comunicating expectations among developers
+\item Useful for finding subtle bugs in complex systems 
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}
+  \frametitle{Challenges}
+\begin{itemize}
+\item Writting \emph{effective} properties  
+  \begin{itemize}
+  \item training software engineers to think about
+    pre- and post-conditions, invariants, etc.
+  \item universities can play a significant role here
+  \item helping industry adopt a higher-skill technology 
+  \end{itemize}
+\item PBT works best with software that is well structured
+\item Design systems around properties and not the other way around
+% \item Is validation of AI~generated code a ``killer app''
+%  for PBT? 
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{References}
+
+  \begin{thebibliography}{9}
+  \bibitem{quickheck} K. Claessen and J. Hughes.
+    \emph{QuickCheck: A lightweight tool for random testing of Haskell
+      programs}, ACM ICFP 2000
+  \bibitem{hypothesis} D. R. MacIver \emph{et al}.
+    \emph{Hypothesis: A new approach to property-based testing},
+    The Journal of Open Source Software, 2019.
+    See also \url{https://hypothesis.readthedocs.io/}
+  \bibitem{telecoms} T. Arts, J. Hughes and J. Johansson
+    \emph{Testing Telecoms Software with Quviq QuickCheck},
+    ACM Workshop on Erlang, 2006
+  \bibitem{autosar} T. Arts, J. Hughes, U. Norell and H. Svensson,
+    \emph{Testing AUTOSAR software with QuickCheck}, IEEE ICSTW 2015
+  \bibitem{practice} H. Goldstein, \emph{et al}. \emph{Property-Based
+      Testing in Practice}, IEEE/ACM ICSE 2024
+  \end{thebibliography}
+
+
+\end{frame}
+
+\begin{frame}
+\begin{center}
+  \Huge Extra slides
+\end{center} 
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Writing properties}
+
+  \begin{description}
+  \item[equivalence] $f(x) = f_{spec} (x)$
+  e.g.\@ $f(x)$ is an optimized implementation
+  and $f_{spec}(x)$ is a reference implementation.
+    
+  \item[idempotency] $f(f(x)) = f(x)$
+  \item[inverse]  $g(f(x)) = x$ 
+  \item[associativity] $f(x,f(y,z) = f(x,y),z)$
+  \item[commutativity] $f(x,y) = f(y,x)$
+  \item[right identity] $f(x,zero) = x$
+  \item[left identity] $f(zero,x)= x$
+  \end{description}
+  \bigskip
+
+  Hypothesis can write these kind of properties for you ---
+  see \texttt{hypothesis.ghostwriter}.
+
+\end{frame}
+
+
+
 
 \begin{frame}[allowframebreaks]
   \frametitle{Validating AI generated code}
@@ -576,137 +788,6 @@ This gives much better test data distribution:
 \end{center}
 
 \end{frame}
-
-\begin{frame}[allowframebreaks]
-  \frametitle{Conclusion}
-
-\begin{itemize}
-\item PBT philosophy: write \emph{properties} and \emph{generate} tests
-\item Lightweight: implemented as libraries
-\item Flexible: domain-specific languages (DSLs) for writing
-    data generators and properties
- \item Scales to realistic software   
-\item Couples executable specifications with code
-\item Useful for comunicating expectations among developers
-\item Useful for finding subtle bugs in complex systems 
-\end{itemize}
-\end{frame}
-
-
-
-\begin{frame}
-  \frametitle{Challenges}
-\begin{itemize}
-\item Writting \emph{effective} properties  
-  \begin{itemize}
-  \item training software engineers to think about
-    pre- and post-conditions, invariants, etc.
-  \item universities can play a significant role here
-  \item helping industry adopt a higher-skill technology 
-  \end{itemize}
-\item PBT works best with software that is well structured
-\item Design systems around properties and not the other way around
-% \item Is validation of AI~generated code a ``killer app''
-%  for PBT? 
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-  \frametitle{References}
-
-  \begin{thebibliography}{9}
-  \bibitem{quickheck} K. Claessen and J. Hughes.
-    \emph{QuickCheck: A lightweight tool for random testing of Haskell
-      programs}, ACM ICFP 2000
-  \bibitem{hypothesis} D. R. MacIver \emph{et al}.
-    \emph{Hypothesis: A new approach to property-based testing},
-    The Journal of Open Source Software, 2019.
-    See also \url{https://hypothesis.readthedocs.io/}
-  \bibitem{telecoms} T. Arts, J. Hughes and J. Johansson
-    \emph{Testing Telecoms Software with Quviq QuickCheck},
-    ACM Workshop on Erlang, 2006
-  \bibitem{autosar} T. Arts, J. Hughes, U. Norell and H. Svensson,
-    \emph{Testing AUTOSAR software with QuickCheck}, IEEE ICSTW 2015
-  \bibitem{practice} H. Goldstein, \emph{et al}. \emph{Property-Based
-      Testing in Practice}, IEEE/ACM ICSE 2024
-  \end{thebibliography}
-
-
-\end{frame}
-
-\begin{frame}
-\begin{center}
-  \Huge Extra slides
-\end{center} 
-\end{frame}
-
-
-\begin{frame}
-  \frametitle{Writing properties}
-
-  \begin{description}
-  \item[equivalence] $f(x) = f_{spec} (x)$
-  e.g.\@ $f(x)$ is an optimized implementation
-  and $f_{spec}(x)$ is a reference implementation.
-    
-  \item[idempotency] $f(f(x)) = f(x)$
-  \item[inverse]  $g(f(x)) = x$ 
-  \item[associativity] $f(x,f(y,z) = f(x,y),z)$
-  \item[commutativity] $f(x,y) = f(y,x)$
-  \item[right identity] $f(x,zero) = x$
-  \item[left identity] $f(zero,x)= x$
-  \end{description}
-  \bigskip
-
-  Hypothesis can write these kind of properties for you ---
-  see \texttt{hypothesis.ghostwriter}.
-
-\end{frame}
-
-
-\begin{frame}
-  \frametitle{Stateful programs}
-
-We can also use PBT to test programs that:
-\begin{enumerate}
-\item modify state;
-\item read and write files;
-\item use network services, databases, etc.
-\end{enumerate}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Testing stateful programs}
-
-\begin{itemize}
-\item Generate sequences of commands
-\item Specify behaviour using a functional model (state machine)
-\item Compare the execution against the model
-\end{itemize}
-
-\begin{center}
-\includegraphics[width=0.75\textwidth]{images/imperative.png}
-\end{center}
-\end{frame}
-
-
-
-\begin{frame}
-  \frametitle{Industrial use example}
-
-\begin{itemize}
-\item Ericsson Media proxy (Java and C++)
-\item Establish telephony connection throught a firewall
-\item Tested with Erlang QuickCheck (Quviq.com)
-\item Adding and removing participants in a call
-\item Random counterexample with 160 commands
-\item Shrunk automatically to 7 commands
-\end{itemize}
-
-\begin{center}
-\includegraphics[width=\textwidth]{images/media1}
-\end{center}
-\end{frame}
-
 \end{document}
+
 
